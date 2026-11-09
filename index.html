@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0712">
+<title>Dungeon Crawler</title>
+<link rel="stylesheet" href="style.css?v=replay-clock-2">
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="armSkin" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4a7a32"/>
+      <stop offset="0.5" stop-color="#7cae52"/>
+      <stop offset="1" stop-color="#3e652a"/>
+    </linearGradient>
+    <filter id="armShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#000" flood-opacity="0.7"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div class="hud-left">
+    <div class="hpbar"><div id="hpFill"></div><span id="hpText">100 / 100</span></div>
+    <div class="hud-row coins"><span class="coin-icon"></span><span id="coinText">0</span></div>
+  </div>
+  <div class="hud-center">
+    <div id="floorText">FLOOR 1</div>
+    <div id="enemyText">Enemies left: 0</div>
+  </div>
+  <div class="hud-right">
+    <div id="weaponText">Fists</div>
+    <button id="pauseBtn" class="icon-btn" aria-label="Pause">II</button>
+  </div>
+</div>
+
+<!-- ============ Touch controls ============ -->
+<div id="touchLayer" class="hidden">
+  <div id="moveStick" class="stick"><div class="knob"></div><span class="stick-label">MOVE</span></div>
+  <div id="aimStick" class="stick aim"><div class="knob"></div><span class="stick-label">AIM</span></div>
+</div>
+<button id="punchBtn" class="hidden" aria-label="Punch">PUNCH</button>
+
+<!-- ============ Home screen ============ -->
+<div id="home" class="screen">
+  <div class="fog fog1"></div>
+  <div class="fog fog2"></div>
+  <div class="floor-glow"></div>
+
+  <div class="title-wrap">
+    <div class="eyes"><span></span><span></span></div>
+
+    <svg class="arm arm-left" viewBox="0 0 340 470" aria-hidden="true">
+      <g filter="url(#armShadow)">
+        <path d="M 60 480 C 70 330, 100 230, 185 150" stroke="url(#armSkin)" stroke-width="76" stroke-linecap="round" fill="none"/>
+        <path d="M 8 480 L 134 480 L 120 398 L 102 426 L 86 382 L 68 422 L 50 388 L 32 430 L 14 398 Z" fill="#2a1b3d"/>
+        <path d="M 78 390 C 90 320, 112 262, 160 206" stroke="rgba(255,255,255,0.13)" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <ellipse cx="200" cy="135" rx="54" ry="46" transform="rotate(-35 200 135)" fill="#6f9f48"/>
+        <g stroke="#6f9f48" stroke-width="25" stroke-linecap="round" fill="none">
+          <path d="M 215 95 Q 270 60 316 90"/>
+          <path d="M 232 118 Q 290 100 324 140"/>
+          <path d="M 236 146 Q 292 148 316 188"/>
+          <path d="M 222 172 Q 268 188 286 224"/>
+          <path d="M 165 170 Q 138 216 176 248"/>
+        </g>
+        <g stroke="rgba(0,0,0,0.18)" stroke-width="6" stroke-linecap="round" fill="none">
+          <path d="M 262 72 l 6 10"/><path d="M 284 110 l 4 10"/><path d="M 286 152 l 2 10"/><path d="M 262 190 l 0 10"/>
+        </g>
+        <g fill="#1c1426">
+          <path d="M 310 78 L 340 94 L 312 106 Z"/>
+          <path d="M 320 128 L 340 154 L 316 154 Z"/>
+          <path d="M 314 178 L 326 208 L 302 196 Z"/>
+          <path d="M 286 214 L 290 244 L 270 228 Z"/>
+          <path d="M 174 242 L 190 268 L 164 258 Z"/>
+        </g>
+        <g stroke="#2d4a1e" stroke-width="4" stroke-linecap="round">
+          <path d="M 92 300 l 30 -10"/><path d="M 100 282 l 6 22"/><path d="M 112 278 l 6 22"/>
+          <path d="M 130 240 l 26 -16"/><path d="M 138 228 l 6 20"/>
+        </g>
+      </g>
+    </svg>
+
+    <div class="arm-right-wrap">
+    <svg class="arm arm-right" viewBox="0 0 340 470" aria-hidden="true">
+      <g filter="url(#armShadow)">
+        <path d="M 60 480 C 70 330, 100 230, 185 150" stroke="url(#armSkin)" stroke-width="76" stroke-linecap="round" fill="none"/>
+        <path d="M 8 480 L 134 480 L 120 398 L 102 426 L 86 382 L 68 422 L 50 388 L 32 430 L 14 398 Z" fill="#2a1b3d"/>
+        <path d="M 78 390 C 90 320, 112 262, 160 206" stroke="rgba(255,255,255,0.13)" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <ellipse cx="200" cy="135" rx="54" ry="46" transform="rotate(-35 200 135)" fill="#6f9f48"/>
+        <g stroke="#6f9f48" stroke-width="25" stroke-linecap="round" fill="none">
+          <path d="M 215 95 Q 270 60 316 90"/>
+          <path d="M 232 118 Q 290 100 324 140"/>
+          <path d="M 236 146 Q 292 148 316 188"/>
+          <path d="M 222 172 Q 268 188 286 224"/>
+          <path d="M 165 170 Q 138 216 176 248"/>
+        </g>
+        <g stroke="rgba(0,0,0,0.18)" stroke-width="6" stroke-linecap="round" fill="none">
+          <path d="M 262 72 l 6 10"/><path d="M 284 110 l 4 10"/><path d="M 286 152 l 2 10"/><path d="M 262 190 l 0 10"/>
+        </g>
+        <g fill="#1c1426">
+          <path d="M 310 78 L 340 94 L 312 106 Z"/>
+          <path d="M 320 128 L 340 154 L 316 154 Z"/>
+          <path d="M 314 178 L 326 208 L 302 196 Z"/>
+          <path d="M 286 214 L 290 244 L 270 228 Z"/>
+          <path d="M 174 242 L 190 268 L 164 258 Z"/>
+        </g>
+        <g stroke="#2d4a1e" stroke-width="4" stroke-linecap="round">
+          <path d="M 92 300 l 30 -10"/><path d="M 100 282 l 6 22"/><path d="M 112 278 l 6 22"/>
+          <path d="M 130 240 l 26 -16"/><path d="M 138 228 l 6 20"/>
+        </g>
+      </g>
+    </svg>
+    </div>
+
+    <div class="slab">
+      <h1>DUNGEON<span>CRAWLER</span></h1>
+      <div class="slab-sub">Descend. Smash. Upgrade. Repeat.</div>
+    </div>
+  </div>
+
+  <div class="home-buttons">
+    <button id="playBtn" class="btn btn-play">ENTER THE DUNGEON</button>
+    <button id="armoryBtn" class="btn btn-secondary">ARMORY</button>
+  </div>
+
+  <div class="home-stats">
+    <span>Best floor: <b id="bestText">0</b></span>
+    <span class="dot">&bull;</span>
+    <span><span class="coin-icon small"></span> <b id="homeCoins">0</b></span>
+  </div>
+
+  <div class="how-to">
+    <div class="how-desktop"><b>W A S D</b> move &nbsp;&middot;&nbsp; <b>MOUSE</b> aim &nbsp;&middot;&nbsp; <b>SPACE</b> attack</div>
+    <div class="how-mobile"><b>LEFT STICK</b> move &nbsp;&middot;&nbsp; <b>RIGHT STICK</b> aim &nbsp;&middot;&nbsp; <b>PUNCH</b> button attack</div>
+  </div>
+
+  <button id="muteBtn" class="icon-btn mute" aria-label="Toggle sound">&#9835;</button>
+</div>
+
+<!-- ============ Shop / Armory ============ -->
+<div id="shop" class="screen hidden">
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="shopTitle">Armory</h2>
+      <div class="shop-coins"><span class="coin-icon"></span><span id="shopCoins">0</span></div>
+    </div>
+    <div id="shopHp" class="shop-hp hidden"></div>
+    <h3 class="section-title">Weapons</h3>
+    <div id="weaponList" class="card-grid"></div>
+    <h3 class="section-title">Upgrades</h3>
+    <div id="upgradeList" class="card-grid"></div>
+    <div class="panel-foot">
+      <button id="descendBtn" class="btn btn-play">Descend</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Pause ============ -->
+<div id="pause" class="screen hidden">
+  <div class="panel small">
+    <h2>Paused</h2>
+    <button id="resumeBtn" class="btn btn-play">Resume</button>
+    <button id="pauseMuteBtn" class="btn btn-secondary">Sound: On</button>
+    <button id="quitBtn" class="btn btn-secondary">Quit to Home</button>
+  </div>
+</div>
+
+<section id="replay" class="screen hidden" aria-labelledby="replayTitle">
+  <div class="replay-header">
+    <span class="replay-badge">RUN REPLAY</span>
+    <h2 id="replayTitle">YOUR RUN HIGHLIGHT</h2>
+    <p id="replayDetail"></p>
+  </div>
+  <div class="replay-footer">
+    <div class="replay-status"><span>Results up next</span><span id="replayTime"></span></div>
+    <progress id="replayProgress" max="1" value="0" aria-label="Highlight playback progress"></progress>
+    <button id="skipReplayBtn" class="btn btn-secondary">Skip replay</button>
+  </div>
+</section>
+
+<!-- ============ Game over ============ -->
+<div id="dead" class="screen hidden">
+  <div class="panel small">
+    <h2 class="dead-title">YOU LOSE</h2>
+    <p id="deadText">The dungeon got you.</p>
+    <p id="deadStats" class="muted"></p>
+    <button id="retryBtn" class="btn btn-play">Try Again</button>
+    <button id="deadHomeBtn" class="btn btn-secondary">Home</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="game.js?v=replay-clock-2"></script>
+</body>
+</html>
