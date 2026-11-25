@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0712">
 <title>Dungeon Crawler</title>
-<link rel="stylesheet" href="style.css?v=replay-clock-2">
+<link rel="stylesheet" href="style.css?v=boss-boons-1">
 </head>
 <body>
 
@@ -29,16 +29,26 @@
   <div class="hud-left">
     <div class="hpbar"><div id="hpFill"></div><span id="hpText">100 / 100</span></div>
     <div class="hud-row coins"><span class="coin-icon"></span><span id="coinText">0</span></div>
+    <div id="xpBar" class="xpbar" role="progressbar" aria-label="Experience" aria-valuemin="0" aria-valuemax="40" aria-valuenow="0" aria-describedby="xpText"><div id="xpFill"></div><span id="xpText">Lv 1 · 0 / 40 XP</span></div>
+    <div id="classText"></div>
+    <div id="statusList" aria-label="Active statuses" aria-live="polite" aria-atomic="true"></div>
   </div>
   <div class="hud-center">
     <div id="floorText">FLOOR 1</div>
     <div id="enemyText">Enemies left: 0</div>
+    <div id="roomText"></div>
   </div>
   <div class="hud-right">
     <div id="weaponText">Fists</div>
+    <div id="secondaryText">Sling</div>
     <button id="pauseBtn" class="icon-btn" aria-label="Pause">II</button>
   </div>
 </div>
+
+<figure id="mapPanel" class="hidden">
+  <canvas id="minimap" width="120" height="120" role="img" aria-label="Explored floor map"></canvas>
+  <figcaption>EXPLORED</figcaption>
+</figure>
 
 <!-- ============ Touch controls ============ -->
 <div id="touchLayer" class="hidden">
@@ -46,6 +56,11 @@
   <div id="aimStick" class="stick aim"><div class="knob"></div><span class="stick-label">AIM</span></div>
 </div>
 <button id="punchBtn" class="hidden" aria-label="Punch">PUNCH</button>
+<div id="actionControls" class="hidden" role="group" aria-label="Dungeon actions">
+  <button id="secondaryBtn" class="action-btn" type="button" aria-label="Fire secondary weapon" aria-keyshortcuts="F">F · Sling</button>
+  <button id="abilityBtn" class="action-btn" type="button" aria-keyshortcuts="Q">Q · Ability</button>
+  <button id="interactBtn" class="action-btn hidden" type="button" aria-keyshortcuts="E">E · Interact</button>
+</div>
 
 <!-- ============ Home screen ============ -->
 <div id="home" class="screen">
@@ -127,6 +142,7 @@
   <div class="home-buttons">
     <button id="playBtn" class="btn btn-play">ENTER THE DUNGEON</button>
     <button id="armoryBtn" class="btn btn-secondary">ARMORY</button>
+    <button id="saveCodeBtn" class="btn btn-secondary" type="button">SAVE CODE</button>
   </div>
 
   <div class="home-stats">
@@ -136,12 +152,57 @@
   </div>
 
   <div class="how-to">
-    <div class="how-desktop"><b>W A S D</b> move &nbsp;&middot;&nbsp; <b>MOUSE</b> aim &nbsp;&middot;&nbsp; <b>SPACE</b> attack</div>
-    <div class="how-mobile"><b>LEFT STICK</b> move &nbsp;&middot;&nbsp; <b>RIGHT STICK</b> aim &nbsp;&middot;&nbsp; <b>PUNCH</b> button attack</div>
+    <div class="how-desktop"><span><b>W A S D</b> move</span> <span><b>MOUSE</b> aim</span> <span><b>SPACE</b> attack</span> <span><b>F</b> secondary</span> <span><b>E</b> kick/talk</span> <span><b>Q</b> ability</span></div>
+    <div class="how-mobile"><span><b>LEFT STICK</b> move</span> <span><b>RIGHT STICK</b> aim</span> <span><b>PUNCH</b> attack</span> <span><b>SHOOT</b> secondary button</span> <span><b>ABILITY</b> button</span> <span><b>INTERACT</b> kick/talk button</span></div>
   </div>
 
   <button id="muteBtn" class="icon-btn mute" aria-label="Toggle sound">&#9835;</button>
 </div>
+
+<section id="classSelect" class="screen hidden" aria-labelledby="classSelectTitle">
+  <div class="panel">
+    <h2 id="classSelectTitle" tabindex="-1">Choose your class</h2>
+    <div id="classList" class="card-grid"></div>
+    <div class="panel-foot">
+      <button id="classBackBtn" class="btn btn-secondary" type="button">Back</button>
+    </div>
+  </div>
+</section>
+
+<section id="boonSelect" class="screen hidden" aria-labelledby="boonTitle" aria-describedby="boonDetail">
+  <div class="panel">
+    <h2 id="boonTitle" tabindex="-1">Choose a boon</h2>
+    <p id="boonDetail" class="panel-intro">The dungeon grants you new power. Choose one boon to resume play.</p>
+    <div id="boonList" class="card-grid"></div>
+    <p class="boon-note">Play is paused. Boons last for this run only.</p>
+  </div>
+</section>
+
+<section id="savePanel" class="screen hidden" aria-labelledby="savePanelTitle">
+  <div class="panel save-panel">
+    <h2 id="savePanelTitle" tabindex="-1">Save codes</h2>
+    <p id="saveDescription" class="panel-intro">Saves coins, permanent equipment and upgrades, your class and checkpoint. Unfinished runs and run boons are not saved.</p>
+    <label for="saveCodeInput" class="field-label">Save code</label>
+    <textarea id="saveCodeInput" rows="6" maxlength="12000" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Save code" aria-describedby="saveDescription" placeholder="Generate a code or paste one here to restore your progress."></textarea>
+    <div class="save-actions">
+      <button id="exportSaveBtn" class="btn btn-equip" type="button">Generate code</button>
+      <button id="copySaveBtn" class="btn btn-secondary" type="button">Copy code</button>
+      <button id="importSaveBtn" class="btn btn-secondary" type="button">Import code</button>
+    </div>
+    <div id="importConfirm" class="hidden" role="group" aria-labelledby="importConfirmTitle" aria-describedby="importConfirmWarning">
+      <h3 id="importConfirmTitle">Replace your progress?</h3>
+      <p id="importConfirmWarning">Importing this code replaces your saved progress. Generate and copy a code first if you want to keep your current save.</p>
+      <div class="save-actions">
+        <button id="confirmImportBtn" class="btn btn-danger" type="button">Replace saved progress</button>
+        <button id="cancelImportBtn" class="btn btn-secondary" type="button">Cancel</button>
+      </div>
+    </div>
+    <p id="saveMessage" role="status" aria-live="polite" aria-atomic="true"></p>
+    <div class="panel-foot">
+      <button id="saveBackBtn" class="btn btn-secondary" type="button">Back</button>
+    </div>
+  </div>
+</section>
 
 <!-- ============ Shop / Armory ============ -->
 <div id="shop" class="screen hidden">
@@ -153,6 +214,12 @@
     <div id="shopHp" class="shop-hp hidden"></div>
     <h3 class="section-title">Weapons</h3>
     <div id="weaponList" class="card-grid"></div>
+    <h3 class="section-title">Secondary Weapons</h3>
+    <div id="secondaryList" class="card-grid"></div>
+    <h3 class="section-title">Armor</h3>
+    <div id="armorList" class="card-grid"></div>
+    <h3 class="section-title">Accessories</h3>
+    <div id="accessoryList" class="card-grid"></div>
     <h3 class="section-title">Upgrades</h3>
     <div id="upgradeList" class="card-grid"></div>
     <div class="panel-foot">
@@ -197,6 +264,6 @@
 
 <div id="toast"></div>
 
-<script src="game.js?v=replay-clock-2"></script>
+<script src="game.js?v=boss-boons-1"></script>
 </body>
 </html>
